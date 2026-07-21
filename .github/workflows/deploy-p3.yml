@@ -1,26 +1,25 @@
-name: Desplegar Infraestructura P3
+name: Validar Infraestructura P3 (CI)
 
 on:
   push:
     paths:
       - 'P3-iac-integracion-continua/infra/**'
-  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'P3-iac-integracion-continua/infra/**'
 
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Login a Azure
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Instalar Bicep CLI
+        run: az bicep install || (curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64 && chmod +x ./bicep && sudo mv ./bicep /usr/local/bin/bicep)
 
-      - name: Desplegar Bicep
-        run: |
-          az deployment group create \
-            -g rg-p2-3tier-andes \
-            --template-file P3-iac-integracion-continua/infra/main.bicep \
-            --parameters sqlAdminPassword="${{ secrets.SQL_ADMIN_PASSWORD }}"
+      - name: Validar sintaxis Bicep
+        run: bicep build P3-iac-integracion-continua/infra/main.bicep
+
+      - name: Linter de Bicep
+        run: bicep lint P3-iac-integracion-continua/infra/main.bicep

@@ -1,0 +1,26 @@
+name: Desplegar Infraestructura P3
+
+on:
+  push:
+    paths:
+      - 'P3-iac-integracion-continua/infra/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Login a Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Desplegar Bicep
+        run: |
+          az deployment group create \
+            -g rg-p2-3tier-andes \
+            --template-file P3-iac-integracion-continua/infra/main.bicep \
+            --parameters sqlAdminPassword="${{ secrets.SQL_ADMIN_PASSWORD }}"
